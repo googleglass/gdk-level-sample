@@ -39,7 +39,6 @@ public class LevelActivity extends Activity implements SensorEventListener {
 
     mLevelView = (LevelView) findViewById(R.id.level);
     mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-    registerListeners();
   }
 
   @Override
