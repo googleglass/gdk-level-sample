@@ -16,6 +16,7 @@
 
 package com.google.android.glass.sample.level;
 
+import android.content.Context;
 import android.graphics.Canvas;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -23,6 +24,7 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -46,6 +48,7 @@ public class LevelRenderer implements DirectRenderingCallback {
     private SensorManager mSensorManager;
     private int mSurfaceWidth;
     private int mSurfaceHeight;
+    private boolean mRenderingPaused;
 
     private final FrameLayout mLayout;
     private final LevelView mLevelView;
@@ -80,15 +83,12 @@ public class LevelRenderer implements DirectRenderingCallback {
     /**
      * Creates a new instance of the {@code LevelRenderer} .
      */
-    public LevelRenderer(FrameLayout layout, LevelView levelView, SensorManager sensorManager) {
-        mLayout = layout;
-        mLevelView = levelView;
+    public LevelRenderer(SensorManager sensorManager, Context context) {
+        LayoutInflater inflater = LayoutInflater.from(context);
+
+        mLayout = (FrameLayout) inflater.inflate(R.layout.level_live_card, null);
+        mLevelView = (LevelView) mLayout.findViewById(R.id.level);
         mSensorManager = sensorManager;
-    }
-
-    @Override
-    public void renderingPaused(SurfaceHolder surfaceHolder, boolean b) {
-
     }
 
     @Override
@@ -101,14 +101,43 @@ public class LevelRenderer implements DirectRenderingCallback {
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         mHolder = holder;
-
-        mRenderThread = new RenderThread();
-        mRenderThread.start();
+        updateRenderingState();
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        mRenderThread.quit();
+        mHolder = null;
+        updateRenderingState();
+    }
+
+    @Override
+    public void renderingPaused(SurfaceHolder surfaceHolder, boolean paused) {
+        mRenderingPaused = paused;
+        updateRenderingState();
+    }
+
+    /**
+     * Starts or stops rendering according to the {@link LiveCard}'s state.
+     */
+    private void updateRenderingState() {
+        boolean shouldRender = (mHolder != null) && !mRenderingPaused;
+        boolean isRendering = (mRenderThread != null);
+
+        if (shouldRender != isRendering) {
+            if (shouldRender) {
+                mSensorManager.registerListener(mSensorEventListener,
+                        mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
+                        SensorManager.SENSOR_DELAY_NORMAL);
+
+                mRenderThread = new RenderThread();
+                mRenderThread.start();
+            } else {
+                mRenderThread.quit();
+                mRenderThread = null;
+
+                mSensorManager.unregisterListener(mSensorEventListener);
+            }
+        }
     }
 
     /**
@@ -151,22 +180,6 @@ public class LevelRenderer implements DirectRenderingCallback {
                 Log.d(TAG, "unlockCanvasAndPost failed", e);
             }
         }
-    }
-
-    /**
-     * Starts tracking the user's orientation.
-     */
-    public void start() {
-        mSensorManager.registerListener(mSensorEventListener,
-                mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                SensorManager.SENSOR_DELAY_NORMAL);
-    }
-
-    /**
-     * Stops tracking the user's orientation. Listeners will no longer be notified of these events.
-     */
-    public void stop() {
-        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     /**

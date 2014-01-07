@@ -54,13 +54,10 @@ public class LevelService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (mLiveCard == null) {
-            LayoutInflater inflater = LayoutInflater.from(this);
-            FrameLayout layout = (FrameLayout) inflater.inflate(R.layout.level_live_card, null);
-            LevelView levelView = (LevelView) layout.findViewById(R.id.level);
             SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
             mLiveCard = mTimelineManager.createLiveCard(LIVE_CARD_TAG);
-            mRenderer = new LevelRenderer(layout, levelView, sensorManager);
+            mRenderer = new LevelRenderer(sensorManager, this);
 
             mLiveCard.setDirectRenderingEnabled(true);
             mLiveCard.getSurfaceHolder().addCallback(mRenderer);
@@ -72,17 +69,12 @@ public class LevelService extends Service {
             mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
 
             mLiveCard.publish(LiveCard.PublishMode.REVEAL);
-
-            mRenderer.start();
         }
-
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        mRenderer.stop();
-
         if (mLiveCard != null && mLiveCard.isPublished()) {
             mLiveCard.unpublish();
             mLiveCard.getSurfaceHolder().removeCallback(mRenderer);
