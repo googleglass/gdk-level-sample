@@ -59,7 +59,6 @@ public class LevelRenderer implements DirectRenderingCallback {
             // Nothing to do here.
         }
 
-        //TODO: disable this when the card is paused
         @Override
         public void onSensorChanged(SensorEvent event) {
             if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
