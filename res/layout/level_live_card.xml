@@ -13,13 +13,18 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<resources>
 
-    <style name="MenuTheme" parent="@android:style/Theme.DeviceDefault">
-       <item name="android:windowBackground">@android:color/transparent</item>
-       <item name="android:colorBackgroundCacheHint">@null</item>
-       <item name="android:windowIsTranslucent">true</item>
-       <item name="android:windowAnimationStyle">@null</item>
-    </style>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    android:keepScreenOn="true"
+    >
+    <com.google.android.glass.sample.level.LevelView
+        android:id="@+id/level"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
 
-</resources>
+        />
+</FrameLayout>

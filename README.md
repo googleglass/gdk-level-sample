@@ -1,19 +1,22 @@
-apk-level-sample
+Level
 ================
 
-Simple APK Glassware acting as a level.
+This sample launches service that uses the IMU to determine the angle
+of your orientation. It uses this value to display a level, in the form
+of a horizontal line as a Live Card.
 
 ## Getting started
 
-Checkout our documentation to learn how to get started on https://developers.google.com/glass/gdk
+Check out our documentation to learn how to get started on
+https://developers.google.com/glass/develop/index
 
-## Running the APK on Glass
+## Running the sample on Glass
 
-You can use your IDE to compile, install, and run the APK or use
+You can use your IDE to compile and install the sample or use
 [`adb`](https://developer.android.com/tools/help/adb.html)
 on the command line:
 
-    $ adb install -r apk-level-sample.apk
-    $ adb shell am start -n com.google.glass.samples.level/.LevelActivity
+    $ adb install -r LevelSample.apk
 
-Note: The Glass screen must be on when you run the APK.
+To start the sample, say "ok glass, show me a demo" from the Glass clock
+screen or use the touch menu.
