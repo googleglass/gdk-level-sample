@@ -20,12 +20,8 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.widget.FrameLayout;
 
@@ -35,16 +31,13 @@ import com.google.android.glass.timeline.TimelineManager;
 /**
  * The main application service that manages the lifetime of the live card.
  */
-public class LevelService extends Service implements SensorEventListener {
+public class LevelService extends Service {
 
-    private static final String LIVE_CARD_ID = "level";
+    private static final String LIVE_CARD_TAG = "level";
 
     private TimelineManager mTimelineManager;
     private LiveCard mLiveCard;
     private LevelRenderer mRenderer;
-    private SensorManager mSensorManager;
-
-    private LevelView mLevelView;
 
     @Override
     public void onCreate() {
@@ -60,17 +53,14 @@ public class LevelService extends Service implements SensorEventListener {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // TODO: is there a better way to do this?
-        LayoutInflater inflater = LayoutInflater.from(this);
-        FrameLayout layout = (FrameLayout) inflater.inflate(R.layout.level_live_card, null);
-        mLevelView = (LevelView) layout.findViewById(R.id.level);
-
-        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        registerListeners();
-
         if (mLiveCard == null) {
-            mLiveCard = mTimelineManager.createLiveCard(LIVE_CARD_ID);
-            mRenderer = new LevelRenderer(layout);
+            LayoutInflater inflater = LayoutInflater.from(this);
+            FrameLayout layout = (FrameLayout) inflater.inflate(R.layout.level_live_card, null);
+            LevelView levelView = (LevelView) layout.findViewById(R.id.level);
+            SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+
+            mLiveCard = mTimelineManager.createLiveCard(LIVE_CARD_TAG);
+            mRenderer = new LevelRenderer(layout, levelView, sensorManager);
 
             mLiveCard.setDirectRenderingEnabled(true);
             mLiveCard.getSurfaceHolder().addCallback(mRenderer);
@@ -82,6 +72,8 @@ public class LevelService extends Service implements SensorEventListener {
             mLiveCard.setAction(PendingIntent.getActivity(this, 0, menuIntent, 0));
 
             mLiveCard.publish(LiveCard.PublishMode.REVEAL);
+
+            mRenderer.start();
         }
 
         return START_STICKY;
@@ -89,7 +81,7 @@ public class LevelService extends Service implements SensorEventListener {
 
     @Override
     public void onDestroy() {
-        unregisterListeners();
+        mRenderer.stop();
 
         if (mLiveCard != null && mLiveCard.isPublished()) {
             mLiveCard.unpublish();
@@ -97,43 +89,5 @@ public class LevelService extends Service implements SensorEventListener {
             mLiveCard = null;
         }
         super.onDestroy();
-    }
-
-    /**
-     * Register this activity as a listener for gravity sensor changes.
-     */
-    private void registerListeners() {
-        mSensorManager.registerListener(this, mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
-                SensorManager.SENSOR_DELAY_NORMAL);
-    }
-    /**
-     * Unregister this activity as a listener.
-     */
-    private void unregisterListeners() {
-        mSensorManager.unregisterListener(this);
-    }
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Nothing to do here.
-    }
-
-    //TODO: should I disable this when the card is paused? If so, how do I restart it?
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
-            computeOrientation(event);
-        }
-    }
-
-    /**
-     * Compute the orientation angle.
-     *
-     * @param event Gravity values.
-     */
-    private void computeOrientation(SensorEvent event) {
-        float angle = (float) -Math.atan(event.values[0]
-                / Math.sqrt(event.values[1] * event.values[1] + event.values[2] * event.values[2]));
-        Log.v("compute", "Computed new angle to " + angle);
-        mLevelView.setAngle(angle);
     }
 }

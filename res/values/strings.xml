@@ -18,7 +18,7 @@
 
     <!-- Launch-related strings. -->
     <string name="app_name">Level Sample</string>
-    <string name="show_demo_voice_trigger">show a demo</string>
+    <string name="show_demo_voice_trigger">show me a demo</string>
 
     <!-- Menu item strings. -->
     <string name="stop">Stop</string>

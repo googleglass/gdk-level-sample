@@ -17,6 +17,10 @@
 package com.google.android.glass.sample.level;
 
 import android.graphics.Canvas;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -39,16 +43,47 @@ public class LevelRenderer implements DirectRenderingCallback {
 
     private SurfaceHolder mHolder;
     private RenderThread mRenderThread;
+    private SensorManager mSensorManager;
     private int mSurfaceWidth;
     private int mSurfaceHeight;
 
     private final FrameLayout mLayout;
+    private final LevelView mLevelView;
+
+    private final SensorEventListener mSensorEventListener = new SensorEventListener() {
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+            // Nothing to do here.
+        }
+
+        //TODO: disable this when the card is paused
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            if (event.sensor.getType() == Sensor.TYPE_GRAVITY) {
+                computeOrientation(event);
+            }
+        }
+
+        /**
+         * Compute the orientation angle.
+         *
+         * @param event Gravity values.
+         */
+        private void computeOrientation(SensorEvent event) {
+            float angle = (float) -Math.atan(event.values[0]
+                    / Math.sqrt(event.values[1] * event.values[1] + event.values[2] * event.values[2]));
+
+            mLevelView.setAngle(angle);
+        }
+    };
 
     /**
      * Creates a new instance of the {@code LevelRenderer} .
      */
-    public LevelRenderer(FrameLayout layout) {
+    public LevelRenderer(FrameLayout layout, LevelView levelView, SensorManager sensorManager) {
         mLayout = layout;
+        mLevelView = levelView;
+        mSensorManager = sensorManager;
     }
 
     @Override
@@ -116,6 +151,22 @@ public class LevelRenderer implements DirectRenderingCallback {
                 Log.d(TAG, "unlockCanvasAndPost failed", e);
             }
         }
+    }
+
+    /**
+     * Starts tracking the user's orientation.
+     */
+    public void start() {
+        mSensorManager.registerListener(mSensorEventListener,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY),
+                SensorManager.SENSOR_DELAY_NORMAL);
+    }
+
+    /**
+     * Stops tracking the user's orientation. Listeners will no longer be notified of these events.
+     */
+    public void stop() {
+        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     /**
